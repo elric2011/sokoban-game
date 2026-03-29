@@ -1,5 +1,5 @@
 // src/components/AISolver.tsx
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { solveLevel, playSolution, type Solution } from '../ai/solver';
 import type { LevelData, Direction } from '../types/game';
 
@@ -15,6 +15,14 @@ export function AISolver({ levelData, onMove, onRestart, isSolving, setIsSolving
   const [solution, setSolution] = useState<Solution | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 切换关卡时重置求解器状态
+  useEffect(() => {
+    setSolution(null);
+    setError(null);
+    setIsCalculating(false);
+    setIsSolving(false);
+  }, [levelData?.id, setIsSolving]);
 
   const handleSolve = useCallback(async () => {
     if (!levelData || isCalculating) return;
