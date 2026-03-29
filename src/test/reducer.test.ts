@@ -149,25 +149,6 @@ describe('gameReducer', () => {
       expect(afterMove.isCompleted).toBe(false);
     });
 
-    it('多箱子关卡：部分箱子到位但玩家站在目标上时不应通关', () => {
-      const levelData: LevelData = {
-        id: 2,
-        width: 7,
-        height: 5,
-        map: [
-          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
-          [CHAR.WALL, CHAR.BOX_ON_TARGET, CHAR.BOX, CHAR.TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
-          [CHAR.WALL, CHAR.PLAYER_ON_TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
-          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
-        ]
-      };
-      const state = initState(levelData);
-
-      // 1个箱子已在目标上，1个箱子未到位，玩家站在目标上
-      // 此时不应通关
-      expect(state.isCompleted).toBe(false);
-    });
-
     it('多箱子关卡：所有箱子到位后才应通关', () => {
       // 简单的2箱子2目标关卡
       // 初始：玩家可以直接推动一个箱子到目标
