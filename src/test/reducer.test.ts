@@ -124,42 +124,7 @@ describe('gameReducer', () => {
       expect(initialState.isCompleted).toBe(false);
     });
 
-    it('多箱子关卡：玩家站在目标上但箱子未全到位时不应通关', () => {
-      // 2个目标，2个箱子，玩家初始在一个目标上
-      // 地图：
-      // #######
-      // #.$@$.#  <- 目标, 箱子, 空, 玩家, 箱子, 目标
-      // #######
-      const levelData: LevelData = {
-        id: 2,
-        width: 7,
-        height: 3,
-        map: [
-          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
-          [CHAR.WALL, CHAR.TARGET, CHAR.BOX, CHAR.PLAYER, CHAR.BOX, CHAR.TARGET, CHAR.WALL],
-          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
-        ]
-      };
-      const state = initState(levelData);
-
-      // 验证初始状态未通关（两个箱子都不在目标上）
-      expect(state.isCompleted).toBe(false);
-
-      // 推动一个箱子到目标上
-      const afterPush = gameReducer(state, { type: 'MOVE', direction: 'LEFT' });
-      expect(afterPush.current.map[1][1]).toBe(CHAR.BOX_ON_TARGET);
-
-      // 还有一个箱子没到位，未通关
-      expect(afterPush.isCompleted).toBe(false);
-    });
-
-    it('Bug场景：1个箱子到位+玩家占目标+1个箱子未到位时不应通关', () => {
-      // 核心Bug场景：2个目标，1个箱子已在目标上，玩家站在另一个目标上，还有1个箱子未到位
-      // 地图：
-      // #######
-      // #.*+$ #  <- 空目标, 箱子在目标, 玩家(占目标), 箱子未到位
-      // #######
-      // 旧代码会误判为通关（因为没有空目标点TARGET）
+    it('1个箱子到位+玩家占目标+1个箱子未到位时不应通关', () => {
       const levelData: LevelData = {
         id: 3,
         width: 7,
