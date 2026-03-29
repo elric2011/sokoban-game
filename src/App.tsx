@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useSokoban } from './hooks/useSokoban';
 import { useIsMobile } from './utils/responsive';
 import { GameCanvas } from './components/GameCanvas';
@@ -8,10 +8,12 @@ import { LevelSelector } from './components/LevelSelector';
 import { StatsPanel } from './components/StatsPanel';
 import { DeadlockModal } from './components/DeadlockModal';
 import { LevelComplete } from './components/LevelComplete';
+import { AISolver } from './components/AISolver';
 
 function App() {
   const {
     state,
+    levels,
     currentLevelId,
     totalLevels,
     move,
@@ -23,6 +25,10 @@ function App() {
   } = useSokoban();
 
   const isMobile = useIsMobile();
+  const [isSolving, setIsSolving] = useState(false);
+
+  // 获取当前关卡数据
+  const currentLevelData = levels.find(l => l.id === currentLevelId) || null;
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!state) return;
@@ -112,6 +118,13 @@ function App() {
         isLastLevel={currentLevelId >= totalLevels}
         onNext={nextLevel}
         onReplay={restart}
+      />
+
+      <AISolver
+        levelData={currentLevelData}
+        onMove={move}
+        isSolving={isSolving}
+        setIsSolving={setIsSolving}
       />
 
       <div className="mt-5 text-center text-sm text-gray-500">
