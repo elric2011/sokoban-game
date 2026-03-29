@@ -125,28 +125,32 @@ describe('gameReducer', () => {
     });
 
     it('多箱子关卡：玩家站在目标上但箱子未全到位时不应通关', () => {
-      // 模拟第二关场景：2个目标，2个箱子，玩家初始在一个目标上
+      // 2个目标，2个箱子，玩家初始在一个目标上
+      // 地图：
+      // #######
+      // #.$@$.#  <- 目标, 箱子, 空, 玩家, 箱子, 目标
+      // #######
       const levelData: LevelData = {
         id: 2,
         width: 7,
-        height: 5,
+        height: 3,
         map: [
           [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
-          [CHAR.WALL, CHAR.BOX, CHAR.BOX, CHAR.TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
-          [CHAR.WALL, CHAR.PLAYER_ON_TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.TARGET, CHAR.BOX, CHAR.PLAYER, CHAR.BOX, CHAR.TARGET, CHAR.WALL],
           [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
         ]
       };
       const state = initState(levelData);
 
-      // 验证初始状态未通关
+      // 验证初始状态未通关（两个箱子都不在目标上）
       expect(state.isCompleted).toBe(false);
 
-      // 玩家移动到其他位置（离开目标点）
-      const afterMove = gameReducer(state, { type: 'MOVE', direction: 'DOWN' });
+      // 推动一个箱子到目标上
+      const afterPush = gameReducer(state, { type: 'MOVE', direction: 'LEFT' });
+      expect(afterPush.current.map[1][1]).toBe(CHAR.BOX_ON_TARGET);
 
-      // 仍未通关，因为箱子都没到位
-      expect(afterMove.isCompleted).toBe(false);
+      // 还有一个箱子没到位，未通关
+      expect(afterPush.isCompleted).toBe(false);
     });
 
     it('多箱子关卡：所有箱子到位后才应通关', () => {
