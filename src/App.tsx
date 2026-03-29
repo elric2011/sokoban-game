@@ -123,6 +123,7 @@ function App() {
       <AISolver
         levelData={currentLevelData}
         onMove={move}
+        onRestart={restart}
         isSolving={isSolving}
         setIsSolving={setIsSolving}
       />

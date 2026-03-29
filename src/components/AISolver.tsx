@@ -6,11 +6,12 @@ import type { LevelData, Direction } from '../types/game';
 interface AISolverProps {
   levelData: LevelData | null;
   onMove: (dir: Direction) => void;
+  onRestart: () => void;
   isSolving: boolean;
   setIsSolving: (solving: boolean) => void;
 }
 
-export function AISolver({ levelData, onMove, isSolving, setIsSolving }: AISolverProps) {
+export function AISolver({ levelData, onMove, onRestart, isSolving, setIsSolving }: AISolverProps) {
   const [solution, setSolution] = useState<Solution | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +46,13 @@ export function AISolver({ levelData, onMove, isSolving, setIsSolving }: AISolve
     if (!solution || isSolving) return;
 
     setIsSolving(true);
+    // 先重置到初始状态，确保求解路径有效
+    onRestart();
+    // 等待一帧确保状态更新
+    await new Promise(resolve => setTimeout(resolve, 50));
     await playSolution(solution.moves, onMove, 200);
     setIsSolving(false);
-  }, [solution, isSolving, onMove, setIsSolving]);
+  }, [solution, isSolving, onMove, onRestart, setIsSolving]);
 
   const handleClear = useCallback(() => {
     setSolution(null);
