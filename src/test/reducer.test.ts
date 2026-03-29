@@ -153,6 +153,30 @@ describe('gameReducer', () => {
       expect(afterPush.isCompleted).toBe(false);
     });
 
+    it('Bug场景：1个箱子到位+玩家占目标+1个箱子未到位时不应通关', () => {
+      // 核心Bug场景：2个目标，1个箱子已在目标上，玩家站在另一个目标上，还有1个箱子未到位
+      // 地图：
+      // #######
+      // #.*+$ #  <- 空目标, 箱子在目标, 玩家(占目标), 箱子未到位
+      // #######
+      // 旧代码会误判为通关（因为没有空目标点TARGET）
+      const levelData: LevelData = {
+        id: 3,
+        width: 7,
+        height: 3,
+        map: [
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+          [CHAR.WALL, CHAR.TARGET, CHAR.BOX_ON_TARGET, CHAR.PLAYER_ON_TARGET, CHAR.BOX, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+        ]
+      };
+      const state = initState(levelData);
+
+      // 验证：1个箱子到位，但还有1个箱子未到位，玩家站在目标上
+      // 此时不应通关
+      expect(state.isCompleted).toBe(false);
+    });
+
     it('多箱子关卡：所有箱子到位后才应通关', () => {
       // 简单的2箱子2目标关卡
       // 初始：玩家可以直接推动一个箱子到目标
