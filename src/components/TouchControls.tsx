@@ -5,10 +5,11 @@ interface TouchControlsProps {
   onDirection: (dir: Direction) => void;
   onUndo: () => void;
   onRestart: () => void;
+  onAISolve: () => void;
   visible: boolean;
 }
 
-export function TouchControls({ onDirection, onUndo, onRestart, visible }: TouchControlsProps) {
+export function TouchControls({ onDirection, onUndo, onRestart, onAISolve, visible }: TouchControlsProps) {
   if (!visible) return null;
 
   const btnClass = "w-14 h-14 text-2xl bg-game-wall text-white rounded-lg border-2 border-slate-500 active:bg-slate-600 flex items-center justify-center select-none touch-manipulation";
@@ -26,6 +27,7 @@ export function TouchControls({ onDirection, onUndo, onRestart, visible }: Touch
       <div className="flex justify-center gap-3 mt-5">
         <button className="game-button" onClick={onUndo}>撤销</button>
         <button className="game-button" onClick={onRestart}>重置</button>
+        <button className="game-button bg-purple-600 hover:bg-purple-700" onClick={onAISolve}>AI通关</button>
       </div>
     </div>
   );

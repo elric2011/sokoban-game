@@ -26,12 +26,22 @@ function App() {
 
   const isMobile = useIsMobile();
   const [isSolving, setIsSolving] = useState(false);
+  const [isSolverOpen, setIsSolverOpen] = useState(false);
 
   // 获取当前关卡数据
   const currentLevelData = levels.find(l => l.id === currentLevelId) || null;
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!state) return;
+
+    // AI求解快捷键 (P键)
+    if (e.key === 'p' || e.key === 'P') {
+      e.preventDefault();
+      if (!isSolverOpen && !isSolving) {
+        setIsSolverOpen(true);
+      }
+      return;
+    }
 
     switch (e.key) {
       case 'ArrowUp':
@@ -102,6 +112,7 @@ function App() {
         onDirection={move}
         onUndo={undo}
         onRestart={restart}
+        onAISolve={() => setIsSolverOpen(true)}
         visible={isMobile}
       />
 
@@ -126,10 +137,12 @@ function App() {
         onRestart={restart}
         isSolving={isSolving}
         setIsSolving={setIsSolving}
+        isOpen={isSolverOpen}
+        onClose={() => setIsSolverOpen(false)}
       />
 
       <div className="mt-5 text-center text-sm text-gray-500">
-        <p>键盘：方向键/WASD 移动，Z 撤销，R 重置</p>
+        <p>键盘：方向键/WASD 移动，Z 撤销，R 重置，P AI通关</p>
         {isMobile && <p>移动端：点击下方按钮控制</p>}
       </div>
     </div>

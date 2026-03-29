@@ -153,24 +153,33 @@ test.describe('Sokoban Game', () => {
     await expect(page.locator('canvas')).toBeVisible();
   });
 
-  test('AI 求解器应显示', async ({ page }) => {
-    await expect(page.locator('text=AI 求解器')).toBeVisible();
-    await expect(page.locator('button:has-text("求解关卡")')).toBeVisible();
+  test('AI 求解器弹窗应能通过快捷键P打开', async ({ page }) => {
+    // Press P key to open AI solver modal
+    await page.keyboard.press('p');
+    await page.waitForTimeout(100);
+
+    // Check modal is open - look for the title in the modal
+    await expect(page.locator('h3:has-text("AI通关")')).toBeVisible();
+    await expect(page.locator('button:has-text("开始求解")')).toBeVisible();
   });
 
   test('AI 求解器应能找到解决方案', async ({ page }) => {
-    // Click solve button
-    await page.click('button:has-text("求解关卡")');
+    // Open AI solver modal with P key
+    await page.keyboard.press('p');
+    await page.waitForTimeout(100);
 
-    // Wait for solution to be found (timeout for complex levels)
+    // Click start solve button
+    await page.click('button:has-text("开始求解")');
+
+    // Wait for solution to be found
     await page.waitForTimeout(5000);
 
-    // Check if solution was found or still calculating
+    // Check if solution was found or error shown
     const hasSolution = await page.locator('button:has-text("自动演示")').isVisible().catch(() => false);
-    const hasError = await page.locator('text=无法找到解决方案').isVisible().catch(() => false);
+    const hasError = await page.locator('text=求解失败').isVisible().catch(() => false);
 
     // Either solution found or error shown is acceptable
-    expect(hasSolution || hasError || await page.locator('button:has-text("求解关卡")').isVisible()).toBeTruthy();
+    expect(hasSolution || hasError).toBeTruthy();
   });
 });
 
