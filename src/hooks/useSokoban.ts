@@ -32,10 +32,11 @@ export function useSokoban() {
   }, [levels]);
 
   const dispatchAction = useCallback((action: { type: string; [key: string]: any }) => {
-    if (!state) return;
-    const newState = gameReducer(state, action as any);
-    setState(newState);
-  }, [state]);
+    setState(prevState => {
+      if (!prevState) return null;
+      return gameReducer(prevState, action as any);
+    });
+  }, []);
 
   const move = useCallback((direction: Direction) => {
     dispatchAction({ type: 'MOVE', direction });
