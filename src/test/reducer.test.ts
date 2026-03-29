@@ -123,6 +123,88 @@ describe('gameReducer', () => {
     it('未完成的关卡不应标记通关', () => {
       expect(initialState.isCompleted).toBe(false);
     });
+
+    it('多箱子关卡：玩家站在目标上但箱子未全到位时不应通关', () => {
+      // 模拟第二关场景：2个目标，2个箱子，玩家初始在一个目标上
+      const levelData: LevelData = {
+        id: 2,
+        width: 7,
+        height: 5,
+        map: [
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+          [CHAR.WALL, CHAR.BOX, CHAR.BOX, CHAR.TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.PLAYER_ON_TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+        ]
+      };
+      const state = initState(levelData);
+
+      // 验证初始状态未通关
+      expect(state.isCompleted).toBe(false);
+
+      // 玩家移动到其他位置（离开目标点）
+      const afterMove = gameReducer(state, { type: 'MOVE', direction: 'DOWN' });
+
+      // 仍未通关，因为箱子都没到位
+      expect(afterMove.isCompleted).toBe(false);
+    });
+
+    it('多箱子关卡：部分箱子到位但玩家站在目标上时不应通关', () => {
+      const levelData: LevelData = {
+        id: 2,
+        width: 7,
+        height: 5,
+        map: [
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+          [CHAR.WALL, CHAR.BOX_ON_TARGET, CHAR.BOX, CHAR.TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.PLAYER_ON_TARGET, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.EMPTY, CHAR.WALL],
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+        ]
+      };
+      const state = initState(levelData);
+
+      // 1个箱子已在目标上，1个箱子未到位，玩家站在目标上
+      // 此时不应通关
+      expect(state.isCompleted).toBe(false);
+    });
+
+    it('多箱子关卡：所有箱子到位后才应通关', () => {
+      // 简单的2箱子2目标关卡
+      // 初始：玩家可以直接推动一个箱子到目标
+      const levelData: LevelData = {
+        id: 2,
+        width: 7,
+        height: 5,
+        map: [
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+          [CHAR.WALL, CHAR.TARGET, CHAR.BOX, CHAR.PLAYER, CHAR.BOX, CHAR.TARGET, CHAR.WALL],
+          [CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL, CHAR.WALL],
+        ]
+      };
+      const state = initState(levelData);
+
+      // 验证初始状态未通关（两个箱子都不在目标上）
+      expect(state.isCompleted).toBe(false);
+
+      // 向左推第一个箱子到目标[1,1]
+      const afterPush1 = gameReducer(state, { type: 'MOVE', direction: 'LEFT' });
+      expect(afterPush1.current.map[1][1]).toBe(CHAR.BOX_ON_TARGET);
+      // 还有一个箱子没到位，未通关
+      expect(afterPush1.isCompleted).toBe(false);
+
+      // 玩家向右走到第二个箱子左边，推动到目标[1,5]
+      // 当前玩家在[1,2]（原箱子位置），需要走到[1,3]
+      // 先向下再向右再向上
+      const afterMove1 = gameReducer(afterPush1, { type: 'MOVE', direction: 'DOWN' });
+      const afterMove2 = gameReducer(afterMove1, { type: 'MOVE', direction: 'RIGHT' });
+      const afterMove3 = gameReducer(afterMove2, { type: 'MOVE', direction: 'UP' });
+      const afterPush2 = gameReducer(afterMove3, { type: 'MOVE', direction: 'RIGHT' });
+
+      // 第二个箱子也到位
+      expect(afterPush2.current.map[1][5]).toBe(CHAR.BOX_ON_TARGET);
+      // 所有箱子到位，通关
+      expect(afterPush2.isCompleted).toBe(true);
+    });
   });
 
   describe('死锁检测', () => {

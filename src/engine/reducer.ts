@@ -13,9 +13,10 @@ const DIRECTION_OFFSET: Record<Direction, Position> = {
 };
 
 function checkComplete(map: string[][]): boolean {
+  // 通关条件：所有箱子都在目标上（没有不在目标上的箱子）
   for (const row of map) {
     for (const char of row) {
-      if (char === CHAR.TARGET) return false;
+      if (char === CHAR.BOX) return false; // 还有箱子不在目标上
     }
   }
   return true;
