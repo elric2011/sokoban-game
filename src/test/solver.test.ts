@@ -92,7 +92,7 @@ describe('AI Solver', () => {
   });
 
   describe('solveLevel', () => {
-    it('应能解决简单关卡', () => {
+    it('应能解决简单关卡', async () => {
       const levelData: LevelData = {
         id: 1,
         width: 5,
@@ -104,14 +104,14 @@ describe('AI Solver', () => {
         ]
       };
 
-      const solution = solveLevel(levelData);
+      const solution = await solveLevel(levelData);
 
       expect(solution).not.toBeNull();
       expect(solution!.moves.length).toBeGreaterThan(0);
       expect(solution!.pushes).toBeGreaterThanOrEqual(1);
     });
 
-    it('应能解决需要多步的关卡', () => {
+    it('应能解决需要多步的关卡', async () => {
       const levelData: LevelData = {
         id: 1,
         width: 7,
@@ -123,13 +123,13 @@ describe('AI Solver', () => {
         ]
       };
 
-      const solution = solveLevel(levelData);
+      const solution = await solveLevel(levelData);
 
       expect(solution).not.toBeNull();
       expect(solution!.moves.length).toBeGreaterThan(1);
     });
 
-    it('应能找到最优解（最短路径）', () => {
+    it('应能找到最优解（最短路径）', async () => {
       // 最简单的关卡：玩家-箱子-目标 直线排列
       const levelData: LevelData = {
         id: 1,
@@ -142,14 +142,14 @@ describe('AI Solver', () => {
         ]
       };
 
-      const solution = solveLevel(levelData);
+      const solution = await solveLevel(levelData);
 
       expect(solution).not.toBeNull();
       // 最优解应该是2步：向右移动，然后推动
       expect(solution!.moves.length).toBeLessThanOrEqual(3);
     });
 
-    it('无解关卡应返回null', () => {
+    it('无解关卡应返回null', async () => {
       // 死锁关卡：箱子被墙包围且不在目标上
       const levelData: LevelData = {
         id: 1,
@@ -163,7 +163,7 @@ describe('AI Solver', () => {
         ]
       };
 
-      const solution = solveLevel(levelData);
+      const solution = await solveLevel(levelData);
 
       // 这个关卡实际上可能被死锁检测剪掉
       // 或者返回一个解，取决于死锁检测的实现

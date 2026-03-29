@@ -185,8 +185,11 @@ function checkDeadlock(state: SolverState, map: string[][]): boolean {
   return detectDeadlock(tempMap);
 }
 
-// BFS求解器
-export function solveLevel(levelData: LevelData): Solution | null {
+// BFS求解器（异步可中断）
+export async function solveLevel(
+  levelData: LevelData,
+  abortSignal?: { current: boolean }
+): Promise<Solution | null> {
   const initialState = createSolverState(levelData.map,
     findPlayerPosition(levelData.map)
   );
@@ -202,7 +205,21 @@ export function solveLevel(levelData: LevelData): Solution | null {
   const visited = new Set<string>();
   visited.add(hashState(initialState));
 
+  let iterations = 0;
+  const BATCH_SIZE = 1000; // 每1000次迭代让出主线程
+
   while (queue.length > 0) {
+    // 检查是否取消
+    if (abortSignal?.current) {
+      return null;
+    }
+
+    // 定期让出主线程，避免阻塞UI
+    if (iterations % BATCH_SIZE === 0) {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+    iterations++;
+
     const [state, path, pushes] = queue.shift()!;
 
     // 检查通关
@@ -218,6 +235,11 @@ export function solveLevel(levelData: LevelData): Solution | null {
     const directions: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
 
     for (const dir of directions) {
+      // 检查是否取消
+      if (abortSignal?.current) {
+        return null;
+      }
+
       const nextState = executeMove(state, levelData.map, dir);
 
       if (!nextState) continue;

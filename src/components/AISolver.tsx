@@ -58,37 +58,29 @@ export function AISolver({
 
     const startTime = performance.now();
 
-    // 使用setTimeout让UI有机会更新
-    setTimeout(() => {
-      try {
-        if (abortRef.current) {
-          setIsCalculating(false);
-          return;
-        }
+    try {
+      const result = await solveLevel(levelData, abortRef);
+      const endTime = performance.now();
 
-        const result = solveLevel(levelData);
-        const endTime = performance.now();
-
-        if (abortRef.current) {
-          setIsCalculating(false);
-          return;
-        }
-
-        if (result) {
-          setSolution(result);
-          setSolveTime((endTime - startTime) / 1000);
-        } else {
-          setError('无法找到解决方案');
-        }
-      } catch (err) {
-        if (!abortRef.current) {
-          setError('计算过程中出错');
-          console.error(err);
-        }
-      } finally {
+      if (abortRef.current) {
         setIsCalculating(false);
+        return;
       }
-    }, 100);
+
+      if (result) {
+        setSolution(result);
+        setSolveTime((endTime - startTime) / 1000);
+      } else {
+        setError('无法找到解决方案');
+      }
+    } catch (err) {
+      if (!abortRef.current) {
+        setError('计算过程中出错');
+        console.error(err);
+      }
+    } finally {
+      setIsCalculating(false);
+    }
   }, [levelData, isCalculating]);
 
   const handlePlay = useCallback(async () => {
