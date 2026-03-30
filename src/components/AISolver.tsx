@@ -27,6 +27,7 @@ export function AISolver({
   const [solveTime, setSolveTime] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef(false);
+  const playAbortRef = useRef(false);
 
   // 切换关卡时重置状态
   useEffect(() => {
@@ -36,6 +37,7 @@ export function AISolver({
     setIsSolving(false);
     setSolveTime(0);
     abortRef.current = false;
+    playAbortRef.current = true; // 取消正在进行的演示
   }, [levelData?.id, setIsSolving]);
 
   // 关闭时重置
@@ -43,9 +45,12 @@ export function AISolver({
     if (isCalculating) {
       abortRef.current = true;
     }
+    if (isSolving) {
+      playAbortRef.current = true;
+    }
     setIsCalculating(false);
     onClose();
-  }, [isCalculating, onClose]);
+  }, [isCalculating, isSolving, onClose]);
 
   const handleSolve = useCallback(async () => {
     if (!levelData || isCalculating) return;
@@ -93,6 +98,7 @@ export function AISolver({
 
     onClose(); // 隐藏弹窗
     setIsSolving(true);
+    playAbortRef.current = false; // 重置取消标志
 
     // 先重置到初始状态
     onRestart();
@@ -100,9 +106,16 @@ export function AISolver({
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // 演示速率：400ms
-    await playSolution(solution.moves, onMove, 400, levelData);
+    for (const dir of solution.moves) {
+      if (playAbortRef.current) {
+        console.log('[AISolver] 演示被取消');
+        break;
+      }
+      onMove(dir);
+      await new Promise(resolve => setTimeout(resolve, 400));
+    }
     setIsSolving(false);
-  }, [solution, isSolving, onMove, onRestart, onClose, setIsSolving, levelData]);
+  }, [solution, isSolving, onMove, onRestart, onClose, setIsSolving]);
 
   if (!isOpen) return null;
 
