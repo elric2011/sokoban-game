@@ -10,6 +10,7 @@ function isBoxOnTarget(map: string[][], x: number, y: number): boolean {
   return map[y]?.[x] === CHAR.BOX_ON_TARGET;
 }
 
+// 检查角落死锁：箱子卡在角落且角落不是目标点
 function isCornerDeadlock(map: string[][], x: number, y: number): boolean {
   if (isBoxOnTarget(map, x, y)) return false;
 
