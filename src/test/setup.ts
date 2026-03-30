@@ -2,7 +2,8 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock fetch for level loading
-global.fetch = vi.fn();
+// @ts-ignore - mock fetch for testing
+(globalThis as any).fetch = vi.fn();
 
 // Mock matchMedia for responsive tests
 Object.defineProperty(window, 'matchMedia', {

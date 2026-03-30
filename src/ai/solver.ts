@@ -203,8 +203,8 @@ function calculateHeuristic(boxes: Position[], targets: Position[]): number {
   return hungarianAlgorithm(costMatrix);
 }
 
-// 检查是否通关
-export function isComplete(state: SolverState, targetCount: number): boolean {
+// 检查是否通关（该函数当前未使用，保留以备将来使用）
+export function isComplete(_state: SolverState, _targetCount: number): boolean {
   // 实际检查需要地图信息，这里简化处理
   return false; // 由调用者提供目标位置检查
 }
@@ -592,52 +592,6 @@ function findPlayerPath(
   }
 
   return null;
-}
-
-// 计算完整路径（包括玩家移动到推箱子位置的路径）
-function computeFullPath(
-  initialState: SolverState,
-  pushMoves: Direction[],
-  map: string[][]
-): Direction[] {
-  const fullPath: Direction[] = [];
-  // currentPlayer 是求解器状态中的玩家位置（推箱子后的位置）
-  let currentPlayer = { ...initialState.player };
-  let currentBoxes = [...initialState.boxes];
-
-  for (const pushDir of pushMoves) {
-    const offset = DIRECTION_OFFSET[pushDir];
-
-    // 根据求解器逻辑，箱子在玩家推的方向上
-    // 即：箱子位置 = 玩家位置 + 推的方向
-    const boxPos = {
-      x: currentPlayer.x + offset.x,
-      y: currentPlayer.y + offset.y
-    };
-
-    // 找到箱子
-    const boxIndex = currentBoxes.findIndex(b =>
-      b.x === boxPos.x && b.y === boxPos.y
-    );
-
-    if (boxIndex === -1) {
-      console.error('[computeFullPath] 找不到箱子', { pushDir, player: currentPlayer, boxPos, boxes: currentBoxes });
-      return fullPath;
-    }
-
-    // 执行推箱子
-    fullPath.push(pushDir);
-
-    // 更新状态：推箱子后玩家在箱子原位置
-    const box = currentBoxes[boxIndex];
-    const newBoxes = [...currentBoxes];
-    newBoxes[boxIndex] = { x: box.x + offset.x, y: box.y + offset.y };
-    newBoxes.sort((a, b) => a.y - b.y || a.x - b.x);
-    currentPlayer = { x: box.x, y: box.y };
-    currentBoxes = newBoxes;
-  }
-
-  return fullPath;
 }
 
 // 演示用：按步骤执行移动（自动计算玩家路径）

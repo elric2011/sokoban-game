@@ -1,6 +1,6 @@
 // src/components/AISolver.tsx
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { solveLevel, playSolution, type Solution } from '../ai/solver';
+import { solveLevel, type Solution } from '../ai/solver';
 import type { LevelData, Direction } from '../types/game';
 
 interface AISolverProps {

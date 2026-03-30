@@ -1,13 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TouchControls } from '../components/TouchControls';
-import type { Direction } from '../types/game';
 
 describe('TouchControls', () => {
   const mockHandlers = {
     onDirection: vi.fn(),
     onUndo: vi.fn(),
     onRestart: vi.fn(),
+    onAISolve: vi.fn(),
   };
 
   it('visible=false 时不应渲染', () => {
