@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+dist
+coverage
+.git
+.github
+*.md
+.vscode
+.idea
+playwright-report
+test-results
+e2e
+scripts
+.claude
+*.png
+demo-*.png
