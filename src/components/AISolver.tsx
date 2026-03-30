@@ -50,6 +50,8 @@ export function AISolver({
   const handleSolve = useCallback(async () => {
     if (!levelData || isCalculating) return;
 
+    console.log('[AISolver] 开始求解...');
+
     setIsCalculating(true);
     setError(null);
     setSolution(null);
@@ -59,7 +61,9 @@ export function AISolver({
     const startTime = performance.now();
 
     try {
+      console.log('[AISolver] 调用 solveLevel...');
       const result = await solveLevel(levelData, abortRef);
+      console.log('[AISolver] solveLevel 返回:', result);
       const endTime = performance.now();
 
       if (abortRef.current) {
@@ -70,6 +74,7 @@ export function AISolver({
       if (result) {
         setSolution(result);
         setSolveTime((endTime - startTime) / 1000);
+        console.log('[AISolver] 求解成功:', result);
       } else {
         setError('无法找到解决方案');
       }
@@ -91,12 +96,13 @@ export function AISolver({
 
     // 先重置到初始状态
     onRestart();
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // 等待足够时间确保 React 状态更新完成
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 演示速率：400ms（比原来200ms慢一倍）
-    await playSolution(solution.moves, onMove, 400);
+    // 演示速率：400ms
+    await playSolution(solution.moves, onMove, 400, levelData);
     setIsSolving(false);
-  }, [solution, isSolving, onMove, onRestart, onClose, setIsSolving]);
+  }, [solution, isSolving, onMove, onRestart, onClose, setIsSolving, levelData]);
 
   if (!isOpen) return null;
 

@@ -12,17 +12,17 @@ export interface SolverState {
 // A* 队列节点
 interface QueueNode {
   state: SolverState;
-  path: Direction[];
+  fullPath: Direction[]; // 完整路径（包括玩家移动和推箱子）
   pushes: number;
-  gScore: number; // 实际代价（步数）
+  gScore: number; // 实际代价（推次数）
   fScore: number; // g + heuristic
 }
 
 // 求解结果
 export interface Solution {
-  moves: Direction[];
-  steps: number;
-  pushes: number;
+  moves: Direction[];  // 推箱子方向
+  steps: number;       // 总步数（包含移动到箱子旁边）
+  pushes: number;      // 推箱子次数
 }
 
 // 优先队列实现（最小堆）
@@ -281,7 +281,7 @@ function checkDeadlock(state: SolverState, map: string[][]): boolean {
 }
 
 // 从地图查找玩家位置
-function findPlayerPosition(map: string[][]): Position {
+export function findPlayerPosition(map: string[][]): Position {
   for (let y = 0; y < map.length; y++) {
     for (let x = 0; x < map[y].length; x++) {
       const char = map[y][x];
@@ -334,6 +334,7 @@ interface PushAction {
   direction: Direction;
   newState: SolverState;
   isMovingOffTarget: boolean; // 是否将箱子从目标上移开
+  playerPath: Direction[]; // 玩家从当前位置移动到推箱子位置的路径
 }
 
 function findAllPossiblePushes(
@@ -371,6 +372,10 @@ function findAllPossiblePushes(
       // 检查玩家是否能到达推的位置
       if (!reachable.has(`${pushPos.x},${pushPos.y}`)) continue;
 
+      // 计算玩家从当前位置到推箱子位置的路径
+      const playerPath = findPlayerPath(state.player, pushPos, state.boxes, map);
+      if (playerPath === null) continue; // 理论上不会到这里，因为reachable已经检查过了
+
       // 检查箱子新位置是否有效
       if (isWall(map, boxNewPos.x, boxNewPos.y)) continue;
 
@@ -397,7 +402,7 @@ function findAllPossiblePushes(
       // 优先不移动已经在目标上的箱子
       const isMovingOffTarget = boxOnTarget && !newPosOnTarget;
 
-      actions.push({ direction: dir, newState, isMovingOffTarget });
+      actions.push({ direction: dir, newState, isMovingOffTarget, playerPath });
     }
   }
 
@@ -416,9 +421,13 @@ export async function solveLevel(
   levelData: LevelData,
   abortSignal?: { current: boolean }
 ): Promise<Solution | null> {
+  console.log('[solveLevel] ========== 开始求解 ==========');
+
   const initialState = createSolverState(levelData.map,
     findPlayerPosition(levelData.map)
   );
+  console.log('[solveLevel] 初始状态:', JSON.stringify(initialState));
+
   const targets = getTargets(levelData.map);
 
   // 检查箱子数是否等于目标数
@@ -442,13 +451,13 @@ export async function solveLevel(
 
   // 对于每个可能的推，计算完整路径
   for (const action of initialActions) {
-    // 计算路径：从玩家位置到推箱子位置 + 推的动作
-    const path = [action.direction];
+    // 计算完整路径：玩家移动路径 + 推的动作
+    const fullPath = [...action.playerPath, action.direction];
     const heuristic = calculateHeuristic(action.newState.boxes, targets);
 
     openSet.push({
       state: action.newState,
-      path: path,
+      fullPath: fullPath,
       pushes: 1,
       gScore: 1,
       fScore: 1 + heuristic
@@ -460,11 +469,19 @@ export async function solveLevel(
   visited.set(hashState(initialState), 0);
 
   let iterations = 0;
-  const BATCH_SIZE = 500; // 每500次迭代让出主线程
+  const BATCH_SIZE = 500;
+
+  console.log('[solveLevel] 开始求解...');
 
   while (!openSet.isEmpty()) {
+    iterations++;
+    if (iterations % 100 === 0) {
+      console.log('[solveLevel] 迭代:', iterations, '队列:', openSet.size());
+    }
+
     // 检查是否取消
     if (abortSignal?.current) {
+      console.log('[solveLevel] 求解被取消');
       return null;
     }
 
@@ -472,10 +489,9 @@ export async function solveLevel(
     if (iterations % BATCH_SIZE === 0) {
       await new Promise(resolve => setTimeout(resolve, 0));
     }
-    iterations++;
 
     const current = openSet.pop()!;
-    const { state, path, pushes, gScore } = current;
+    const { state, fullPath, pushes, gScore } = current;
 
     // 如果这个状态已经被更好的路径访问过，跳过
     const stateHash = hashState(state);
@@ -488,9 +504,10 @@ export async function solveLevel(
 
     // 检查通关
     if (checkComplete(state.boxes, targets)) {
+      console.log('[solveLevel] 找到解，完整路径:', fullPath.length, '推次数:', pushes);
       return {
-        moves: path,
-        steps: path.length,
+        moves: fullPath,
+        steps: fullPath.length,
         pushes: pushes
       };
     }
@@ -520,9 +537,12 @@ export async function solveLevel(
       const heuristic = calculateHeuristic(action.newState.boxes, targets);
       const fScore = newGScore + heuristic;
 
+      // 构建新的完整路径：之前的路径 + 玩家移动到推位置的路径 + 推的动作
+      const newFullPath = [...fullPath, ...action.playerPath, action.direction];
+
       openSet.push({
         state: action.newState,
-        path: [...path, action.direction],
+        fullPath: newFullPath,
         pushes: pushes + 1,
         gScore: newGScore,
         fScore: fScore
@@ -533,14 +553,104 @@ export async function solveLevel(
   return null; // 无解
 }
 
-// 演示用：按步骤执行移动
+// BFS查找玩家从起点到终点的最短路径（避开箱子）
+function findPlayerPath(
+  start: Position,
+  end: Position,
+  boxes: Position[],
+  map: string[][]
+): Direction[] | null {
+  const boxSet = new Set(boxes.map(b => `${b.x},${b.y}`));
+  const visited = new Set<string>();
+  const queue: { pos: Position; path: Direction[] }[] = [{ pos: start, path: [] }];
+  visited.add(`${start.x},${start.y}`);
+
+  const directions: Direction[] = ['UP', 'DOWN', 'LEFT', 'RIGHT'];
+
+  while (queue.length > 0) {
+    const { pos, path } = queue.shift()!;
+
+    if (pos.x === end.x && pos.y === end.y) {
+      return path;
+    }
+
+    for (const dir of directions) {
+      const offset = DIRECTION_OFFSET[dir];
+      const newPos = {
+        x: pos.x + offset.x,
+        y: pos.y + offset.y
+      };
+
+      const key = `${newPos.x},${newPos.y}`;
+      if (visited.has(key)) continue;
+      if (isWall(map, newPos.x, newPos.y)) continue;
+      if (boxSet.has(key)) continue;
+
+      visited.add(key);
+      queue.push({ pos: newPos, path: [...path, dir] });
+    }
+  }
+
+  return null;
+}
+
+// 计算完整路径（包括玩家移动到推箱子位置的路径）
+function computeFullPath(
+  initialState: SolverState,
+  pushMoves: Direction[],
+  map: string[][]
+): Direction[] {
+  const fullPath: Direction[] = [];
+  // currentPlayer 是求解器状态中的玩家位置（推箱子后的位置）
+  let currentPlayer = { ...initialState.player };
+  let currentBoxes = [...initialState.boxes];
+
+  for (const pushDir of pushMoves) {
+    const offset = DIRECTION_OFFSET[pushDir];
+
+    // 根据求解器逻辑，箱子在玩家推的方向上
+    // 即：箱子位置 = 玩家位置 + 推的方向
+    const boxPos = {
+      x: currentPlayer.x + offset.x,
+      y: currentPlayer.y + offset.y
+    };
+
+    // 找到箱子
+    const boxIndex = currentBoxes.findIndex(b =>
+      b.x === boxPos.x && b.y === boxPos.y
+    );
+
+    if (boxIndex === -1) {
+      console.error('[computeFullPath] 找不到箱子', { pushDir, player: currentPlayer, boxPos, boxes: currentBoxes });
+      return fullPath;
+    }
+
+    // 执行推箱子
+    fullPath.push(pushDir);
+
+    // 更新状态：推箱子后玩家在箱子原位置
+    const box = currentBoxes[boxIndex];
+    const newBoxes = [...currentBoxes];
+    newBoxes[boxIndex] = { x: box.x + offset.x, y: box.y + offset.y };
+    newBoxes.sort((a, b) => a.y - b.y || a.x - b.x);
+    currentPlayer = { x: box.x, y: box.y };
+    currentBoxes = newBoxes;
+  }
+
+  return fullPath;
+}
+
+// 演示用：按步骤执行移动（自动计算玩家路径）
 export async function playSolution(
   moves: Direction[],
   onMove: (dir: Direction) => void,
-  delay: number = 300
+  delay: number = 300,
+  _levelData?: LevelData
 ): Promise<void> {
+  console.log('[playSolution] 执行', moves.length, '步');
   for (const dir of moves) {
     onMove(dir);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
+  console.log('[playSolution] 完成');
 }
