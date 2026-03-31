@@ -472,10 +472,7 @@ export async function solveLevel(
 
   while (!openSet.isEmpty()) {
     iterations++;
-    // 只在调试模式下输出迭代日志
-    if (process.env.DEBUG === 'solver' && iterations % 1000 === 0) {
-      console.log('[solveLevel] 迭代:', iterations, '队列:', openSet.size());
-    }
+    // 调试日志已禁用
 
     // 检查是否取消
     if (abortSignal?.current) {
