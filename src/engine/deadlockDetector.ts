@@ -28,7 +28,9 @@ function isCornerDeadlock(map: string[][], x: number, y: number): boolean {
   return (up && left) || (up && right) || (down && left) || (down && right);
 }
 
-// 检查边线死锁：箱子在墙边且墙不是目标，且对面也是墙或箱子
+// 检查边线死锁：箱子在墙边且墙不是目标，且对面也是墙
+// 注意：只对两面都是墙（不是箱子）的情况判断为死锁
+// 因为箱子可以被推动，不是永久死锁
 function isWallDeadlock(map: string[][], x: number, y: number): boolean {
   if (isBoxOnTarget(map, x, y)) return false;
 
@@ -36,15 +38,11 @@ function isWallDeadlock(map: string[][], x: number, y: number): boolean {
   const down = isWall(map, x, y + 1);
   const left = isWall(map, x - 1, y);
   const right = isWall(map, x + 1, y);
-  const upBox = isBox(map, x, y - 1);
-  const downBox = isBox(map, x, y + 1);
-  const leftBox = isBox(map, x - 1, y);
-  const rightBox = isBox(map, x + 1, y);
 
-  // 水平墙边死锁：上下都是墙或箱子
-  if ((up || upBox) && (down || downBox)) return true;
-  // 垂直墙边死锁：左右都是墙或箱子
-  if ((left || leftBox) && (right || rightBox)) return true;
+  // 水平墙边死锁：上下都是墙（不包括箱子，因为箱子可以推开）
+  if (up && down) return true;
+  // 垂直墙边死锁：左右都是墙
+  if (left && right) return true;
 
   return false;
 }
