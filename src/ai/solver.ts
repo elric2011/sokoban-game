@@ -421,12 +421,9 @@ export async function solveLevel(
   levelData: LevelData,
   abortSignal?: { current: boolean }
 ): Promise<Solution | null> {
-  console.log('[solveLevel] ========== 开始求解 ==========');
-
   const initialState = createSolverState(levelData.map,
     findPlayerPosition(levelData.map)
   );
-  console.log('[solveLevel] 初始状态:', JSON.stringify(initialState));
 
   const targets = getTargets(levelData.map);
 
@@ -475,7 +472,8 @@ export async function solveLevel(
 
   while (!openSet.isEmpty()) {
     iterations++;
-    if (iterations % 100 === 0) {
+    // 只在调试模式下输出迭代日志
+    if (process.env.DEBUG === 'solver' && iterations % 1000 === 0) {
       console.log('[solveLevel] 迭代:', iterations, '队列:', openSet.size());
     }
 
@@ -504,7 +502,6 @@ export async function solveLevel(
 
     // 检查通关
     if (checkComplete(state.boxes, targets)) {
-      console.log('[solveLevel] 找到解，完整路径:', fullPath.length, '推次数:', pushes);
       return {
         moves: fullPath,
         steps: fullPath.length,
@@ -601,10 +598,8 @@ export async function playSolution(
   delay: number = 300,
   _levelData?: LevelData
 ): Promise<void> {
-  console.log('[playSolution] 执行', moves.length, '步');
   for (const dir of moves) {
     onMove(dir);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
-  console.log('[playSolution] 完成');
 }
