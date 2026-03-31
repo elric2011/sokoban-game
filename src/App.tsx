@@ -22,6 +22,8 @@ function App() {
     loadLevel,
     prevLevel,
     nextLevel,
+    isLoading,
+    error,
   } = useSokoban();
 
   const isMobile = useIsMobile();
@@ -85,6 +87,34 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-sky-400 border-t-transparent mb-4"></div>
+          <p className="text-sky-400 text-xl">加载关卡中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-5">
+        <div className="bg-red-900/50 border border-red-500 rounded-xl p-6 max-w-md text-center">
+          <h2 className="text-xl font-bold text-red-400 mb-3">加载失败</h2>
+          <p className="text-gray-300 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition"
+          >
+            刷新页面
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!state) {
     return <div className="text-center p-10 text-sky-400 text-xl">Loading...</div>;
